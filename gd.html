@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geometry Dash Card Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#10131a;--panel:#191e29;--panel2:#202736;--line:#30394b;--muted:#98a4b8;--text:#eef2fa;--accent:#8ab4ff;--card-text-font:'Oswald',sans-serif;--card-text-size:50px;--rank-text-font:'Archivo Black',sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.4 Inter,ui-sans-serif,system-ui,sans-serif}
+.app{min-height:100vh;display:grid;grid-template-columns:310px 1fr;gap:22px;padding:22px;max-width:1500px;margin:auto}
+.sidebar{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;height:max-content}
+.layers{display:grid;gap:14px}.layer{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:13px}
+.layer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.layer-head strong{font-size:14px}.num{color:var(--muted);font-size:11px;letter-spacing:.08em}
+label{display:block;color:#b8c2d2;font-size:12px;margin:0 0 6px}
+select,input[type=text],textarea{width:100%;background:#111722;border:1px solid #3a4559;color:var(--text);border-radius:8px;padding:9px 10px;font:inherit;outline:none}textarea{display:block;resize:vertical;min-height:150px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;overflow-y:auto}
+select:focus,input:focus,textarea:focus{border-color:var(--accent)}.field{margin-top:10px}
+.color-row{display:flex;align-items:center;gap:10px}.color-row input{width:48px;height:36px;padding:2px;background:#111722;border:1px solid #3a4559;border-radius:8px}.hint{font-size:11px;color:var(--muted);margin-top:7px}
+.upload{display:block;border:1px dashed #52617a;border-radius:9px;padding:12px;text-align:center;color:#cbd6e8;cursor:pointer;background:#141b27}.upload:hover{border-color:var(--accent)}.upload input{display:none}
+.range-row{display:flex;gap:10px;align-items:center}.range-row input{width:100%;accent-color:var(--accent)}.range-row output{width:40px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:9px;margin-top:16px}.btn{border:0;border-radius:9px;padding:11px 13px;font:600 13px inherit;cursor:pointer}.primary{background:var(--accent);color:#101827;flex:1}.secondary{background:#2a3445;color:var(--text)}
+.workspace{display:flex;align-items:center;justify-content:center;min-width:0;padding:12px;position:sticky;top:10px;align-self:start;height:calc(100vh - 20px)}.preview-wrap{width:min(100%,610px);display:grid;gap:14px;justify-items:center}.preview-top{width:100%;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}.preview{position:relative;width:min(100%,calc((100vh - 100px)*.7177));aspect-ratio:1500/2090;background:#242a35;overflow:hidden;border-radius:8px;box-shadow:0 18px 60px #0008;touch-action:none}
+.preview img{-webkit-user-drag:none;user-drag:none;position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;user-select:none}
+#background{z-index:1}.tint{position:absolute;inset:0;z-index:2;pointer-events:none;mix-blend-mode:multiply;opacity:.70}
+.art{z-index:3;object-fit:contain!important;transform-origin:center;pointer-events:auto!important;cursor:grab}.art:active{cursor:grabbing}
+.overlay-tint{position:absolute;inset:0;pointer-events:none;mix-blend-mode:normal;opacity:.70}
+#rarityOverlay{z-index:4}#coinsOverlay{z-index:8}
+#frameOverlay{z-index:6}
+#frameTint{z-index:7;mask-image:url("https://raw.githubusercontent.com/TheGigabyteKid/GD-TCG/refs/heads/main/frame.png");mask-size:100% 100%;mask-repeat:no-repeat;-webkit-mask-image:url("https://raw.githubusercontent.com/TheGigabyteKid/GD-TCG/refs/heads/main/frame.png");-webkit-mask-size:100% 100%;-webkit-mask-repeat:no-repeat}
+#difficultyOverlay{z-index:10}
+#textCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:12;pointer-events:none}
+.placeholder{position:absolute;z-index:11;inset:0;display:grid;place-items:center;color:#d4dbea88;font-size:12px;pointer-events:none}
+.preview-meta{width:100%;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+@media(max-width:800px){.app{grid-template-columns:1fr;padding:12px}.sidebar{order:2}.workspace{order:1;padding:4px;position:static;height:auto;align-self:auto}.preview{width:min(100%,440px);}.layers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.layers{grid-template-columns:1fr}.app{gap:12px}}
+</style>
+</head>
+<body>
+<main class="app">
+<aside class="sidebar">
+  <div class="layers">
+    <section class="layer">
+      <div class="layer-head"><strong>Difficulty</strong><span class="num">A</span></div>
+      <label for="difficultySelect">Difficulty</label>
+      <select id="difficultySelect">
+        <option>Auto</option><option>Easy</option><option>Normal</option><option>Hard</option><option>Harder</option><option>Insane</option>
+        <option>Easy Demon</option><option>Medium Demon</option><option>Hard Demon</option><option>Insane Demon</option><option>Extreme Demon</option>
+      </select>
+    </section>
+    <section class="layer">
+      <div class="layer-head"><strong>Background</strong><span class="num">B</span></div>
+      <div class="hint">Background 1</div>
+      <div class="field"><label for="backgroundColor">Background color</label><div class="color-row"><input id="backgroundColor" type="color" value="#ffffff"><span class="hint">Color tint</span></div></div>
+    </section>
+    <section class="layer">
+      <div class="layer-head"><strong>Image</strong><span class="num">C</span></div>
+      <label class="upload">Choose image<input id="artUpload" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <div class="field"><label for="artScale">Image size</label><div class="range-row"><input id="artScale" type="range" min="10" max="180" value="100"><output id="scaleValue">100%</output></div></div>
+      <div class="hint">Drag the image in the preview to reposition it.</div>
+      <div class="field"><button class="btn secondary" id="resetArt" type="button">Reset image position</button></div>
+    </section>
+    <section class="layer">
+      <div class="layer-head"><strong>Rarity</strong><span class="num">D</span></div>
+      <label for="raritySelect">Rarity</label><select id="raritySelect"><option>Common</option><option>Uncommon</option><option>Rare</option></select>
+    </section>
+    <section class="layer">
+      <div class="layer-head"><strong>Frame</strong><span class="num">E</span></div>
+      <div class="hint">Frame 1</div>
+      <div class="field"><label for="frameColor">Frame color</label><div class="color-row"><input id="frameColor" type="color" value="#ffffff"><span class="hint">Separate frame tint</span></div></div>
+    </section>
+    <section class="layer">
+      <div class="layer-head"><strong>Coins</strong><span class="num">F</span></div>
+      <label for="coinsSelect">Coin count</label><select id="coinsSelect"><option value="0">0 Coins</option><option value="1">1 Coin</option><option value="2">2 Coins</option><option value="3">3 Coins</option></select>
+    </section>
+    <section class="layer">
+      <div class="layer-head"><strong>Text</strong><span class="num">G</span></div>
+      <div class="field">
+        <label for="textColorSelect">Text color</label>
+        <select id="textColorSelect">
+          <option value="#ffffff">White</option>
+          <option value="#000000">Black</option>
+          <option value="#ffff00">Yellow</option>
+          <option value="#8000ff">Purple</option>
+          <option value="#ff0000">Red</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="descriptionColorSelect">Description color</label>
+        <select id="descriptionColorSelect">
+          <option value="#ffffff">White</option>
+          <option value="#000000">Black</option>
+          <option value="#ffff00">Yellow</option>
+          <option value="#8000ff">Purple</option>
+          <option value="#ff0000">Red</option>
+        </select>
+      </div>
+      <div class="field"><label for="framePerfectsInput">Frame Perfects</label><input id="framePerfectsInput" type="text" maxlength="6" value="0 FP" autocomplete="off"></div>
+      <div class="field"><label for="nameInput">Name</label><input id="nameInput" type="text" autocomplete="off"></div>
+      <div class="field"><label for="starsInput">Stars</label><input id="starsInput" type="text" maxlength="2" autocomplete="off"></div>
+      <div class="field"><label for="rankInput">Rank</label><input id="rankInput" type="text" autocomplete="off"></div>
+      <div class="field"><label for="subtextInput">Subtext</label><input id="subtextInput" type="text" autocomplete="off"></div>
+      <div class="field"><label for="descriptionInput">Description</label><textarea id="descriptionInput" rows="6" wrap="soft" autocomplete="off" aria-label="Description (up to six visible lines)"></textarea></div>
+      <div class="hint">Use a text color that contrasts the background.</div>
+    </section>
+  </div>
+  <div class="actions"><button class="btn primary" id="downloadBtn" type="button">Download PNG</button><button class="btn secondary" id="clearBtn" type="button">Clear</button></div>
+</aside>
+<section class="workspace">
+  <div class="preview-wrap">
+    <div class="preview-top"><span>Card preview</span><span>1500 × 2090 px</span></div>
+    <div class="preview" id="preview">
+      <img id="background" alt="" draggable="false" crossorigin="anonymous" src="https://raw.githubusercontent.com/TheGigabyteKid/GD-TCG/refs/heads/main/b1.png">
+      <div class="tint" id="tint"></div>
+      <img id="art" class="art" alt="" draggable="false" hidden>
+      <img id="rarityOverlay" alt="" draggable="false" crossorigin="anonymous">
+      <img id="coinsOverlay" alt="" draggable="false" crossorigin="anonymous">
+      <img id="frameOverlay" alt="" draggable="false" crossorigin="anonymous">
+      <img id="difficultyOverlay" alt="" draggable="false" crossorigin="anonymous">
+      <div class="overlay-tint" id="frameTint"></div>
+      <div class="placeholder" id="placeholder" hidden></div>
+      <canvas id="textCanvas" width="1500" height="2090" aria-hidden="true"></canvas>
+    </div>
+
+  </div>
+</section>
+</main>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ const root='https://raw.githubusercontent.com/TheGigabyteKid/GD-TCG/refs/heads/main/';
+ const bg=$('background'),art=$('art'),preview=$('preview');
+ const difficultyFiles={'Auto':'auto.png','Easy':'easy.png','Normal':'normal.png','Hard':'hard.png','Harder':'harder.png','Insane':'insane.png','Easy Demon':'easy%20demon.png','Medium Demon':'medium%20demon.png','Hard Demon':'hard%20demon.png','Insane Demon':'insane%20demon.png','Extreme Demon':'extream%20demon.png'};
+ const rarityFiles={'Common':'common.png','Uncommon':'uncommon.png','Rare':'rare.png'};
+ const coinFiles={'0':'coin0.png','1':'coin1.png','2':'coin3.png','3':'coin4.png'};
+ let artUrl=null,x=0,y=0,scale=100,dragging=false,start=null;
+ const textBoxes={
+   name:{x:315,y:103,w:868,h:100,align:'center',font:'Oswald',weight:700,size:51},
+   subtext:{x:606,y:211,w:594,h:100,align:'center',font:'Oswald',weight:700,size:51},
+   framePerfects:{x:102,y:1771,w:388,h:100,align:'center',font:'Oswald',weight:700,size:51},
+   stars:{x:1145,y:977,w:222,h:100,align:'left',font:'Oswald',weight:700,size:51},
+   rank:{x:1175,y:1823,w:244,h:100,align:'center',font:'Archivo Black',weight:400,size:51},
+   description:{x:120,y:1223,w:1258,h:504,align:'left',font:'Oswald',weight:700,size:51}
+ };
+ const textCanvas=$('textCanvas');
+ const textCtx=textCanvas.getContext('2d');
+ const textInputIds={name:'nameInput',subtext:'subtextInput',framePerfects:'framePerfectsInput',stars:'starsInput',rank:'rankInput',description:'descriptionInput'};
+ function drawText(ctx,clearFirst=false){
+   if(clearFirst)ctx.clearRect(0,0,1500,2090);
+   const color=$('textColorSelect').value;
+   const descriptionColor=$('descriptionColorSelect').value;
+   const margin=9.6; 
+   for(const [key,box] of Object.entries(textBoxes)){
+     const value=$(textInputIds[key]).value;
+     if(!value)continue;
+     const rankLength=key==='rank'?Array.from(value).length:0;
+     const size=key==='rank'?(rankLength===1?110:rankLength===2?80:box.size):box.size;
+     ctx.save();
+     ctx.beginPath();
+     const rankRaise=key==='rank'?(rankLength===1?30:rankLength===2?20:0):0;
+     ctx.rect(box.x,box.y-rankRaise,box.w,box.h+rankRaise);
+     ctx.clip();
+     ctx.fillStyle=key==='description'?descriptionColor:color;
+     ctx.font=`${box.weight} ${size}px "${box.font}"`;
+     ctx.textAlign=box.align;
+     ctx.textBaseline='top';
+     const textX=box.align==='left'?box.x+margin:box.x+box.w/2;
+     if(key==='description'){
+       const maxWidth=box.w-margin*2;
+       const lineHeight=size*1.2;
+       let lineY=box.y+margin;
+       const paragraphs=value.split(/\r?\n/);
+       for(const paragraph of paragraphs){
+         const words=paragraph.split(/\\s+/).filter(Boolean);
+         let line='';
+         if(!words.length){lineY+=lineHeight;continue;}
+         for(const word of words){
+           const candidate=line?line+' '+word:word;
+           if(line && ctx.measureText(candidate).width>maxWidth){
+             ctx.fillText(line,textX,lineY);
+             lineY+=lineHeight;
+             line='';
+           }
+           if(ctx.measureText(word).width>maxWidth){
+             let part='';
+             for(const char of Array.from(word)){
+               const next=part+char;
+               if(part && ctx.measureText(next).width>maxWidth){
+                 if(line){ctx.fillText(line,textX,lineY);lineY+=lineHeight;line='';}
+                 if(lineY+lineHeight>box.y+box.h)break;
+                 ctx.fillText(part,textX,lineY);lineY+=lineHeight;part=char;
+               }else part=next;
+             }
+             line=part;
+           }else{
+             line=line?line+' '+word:word;
+           }
+           if(lineY+lineHeight>box.y+box.h)break;
+         }
+         if(line && lineY+lineHeight<=box.y+box.h)ctx.fillText(line,textX,lineY);
+         lineY+=lineHeight;
+         if(lineY>box.y+box.h)break;
+       }
+     }else{
+       const textY=box.y+margin-rankRaise;
+       ctx.fillText(value,textX,textY);
+     }
+     ctx.restore();
+   }
+   ctx.save();
+   ctx.beginPath();ctx.rect(109,1899,1000,100);ctx.clip();
+   ctx.fillStyle=color;
+   ctx.font='700 51px "Oswald"';
+   ctx.textAlign='left';ctx.textBaseline='top';
+   ctx.fillText('Made by Graham Brewer        2026',118.6,1923.6);
+   ctx.restore();
+ }
+ function updateTextPreview(){drawText(textCtx,true);}
+ Object.values(textInputIds).forEach(id=>$(id).addEventListener('input',updateTextPreview));
+ $('textColorSelect').addEventListener('change',updateTextPreview);
+ $('descriptionColorSelect').addEventListener('change',updateTextPreview);
+ if(document.fonts)Promise.all([document.fonts.load('700 51px \"Oswald\"'),document.fonts.load('400 51px \"Archivo Black\"'),document.fonts.load('400 110px \"Archivo Black\"'),document.fonts.load('400 80px \"Archivo Black\"')]).then(updateTextPreview).catch(updateTextPreview);
+ const setOverlay=(id,file)=>{const el=$(id);el.src=file?root+file:'';el.hidden=!file;};
+ function updateOverlays(){
+   setOverlay('difficultyOverlay',difficultyFiles[$('difficultySelect').value]);
+   setOverlay('rarityOverlay',rarityFiles[$('raritySelect').value]);
+   setOverlay('coinsOverlay',coinFiles[$('coinsSelect').value]);
+ }
+ $('difficultySelect').addEventListener('change',updateOverlays);
+ $('raritySelect').addEventListener('change',updateOverlays);
+ $('coinsSelect').addEventListener('change',updateOverlays);
+ $('backgroundColor').addEventListener('input',e=>{$('tint').style.backgroundColor=e.target.value;});
+ $('frameColor').addEventListener('input',e=>{$('frameTint').style.backgroundColor=e.target.value;});
+ $('artUpload').addEventListener('change',e=>{
+   const file=e.target.files&&e.target.files[0];if(!file)return;
+   if(artUrl)URL.revokeObjectURL(artUrl);
+   artUrl=URL.createObjectURL(file);art.src=artUrl;art.hidden=false;$('placeholder').hidden=true;
+   x=0;y=0;scale=100;$('artScale').value=100;updateArt();
+ });
+ function updateArt(){const r=preview.getBoundingClientRect();const previewX=x*r.width/1500;const previewY=y*r.height/2090;art.style.transform=`translate(calc(-50% + ${previewX}px),calc(-50% + ${previewY}px)) scale(${scale/100})`;art.style.left='50%';art.style.top='50%';$('scaleValue').value=scale+'%';}
+ $('artScale').addEventListener('input',e=>{scale=+e.target.value;updateArt();});
+ $('resetArt').addEventListener('click',()=>{x=0;y=0;scale=100;$('artScale').value=100;updateArt();});
+ art.addEventListener('dragstart',e=>e.preventDefault());
+ bg.addEventListener('dragstart',e=>e.preventDefault());
+ art.addEventListener('pointerdown',e=>{e.preventDefault();dragging=true;art.setPointerCapture(e.pointerId);start={px:e.clientX,py:e.clientY,x,y};});
+ art.addEventListener('pointermove',e=>{if(!dragging)return;const r=preview.getBoundingClientRect();x=start.x+(e.clientX-start.px)*1500/r.width;y=start.y+(e.clientY-start.py)*2090/r.height;updateArt();});
+ art.addEventListener('pointerup',()=>dragging=false);art.addEventListener('pointercancel',()=>dragging=false);
+ $('clearBtn').addEventListener('click',()=>{if(artUrl)URL.revokeObjectURL(artUrl);artUrl=null;art.removeAttribute('src');art.hidden=true;$('artUpload').value='';$('placeholder').hidden=false;x=0;y=0;scale=100;$('artScale').value=100;updateArt();});
+ function loadImage(src,crossOrigin=false){return new Promise((resolve,reject)=>{const im=new Image();if(crossOrigin)im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Could not load an image layer. Check that the asset URL exists and allows canvas access.'));im.src=src;});}
+ $('downloadBtn').addEventListener('click',async()=>{
+   const button=$('downloadBtn');
+   button.disabled=true;
+   button.textContent='Preparing…';
+   try{
+     if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+     if(document.fonts){await Promise.all([document.fonts.load('700 51px Oswald'),document.fonts.load('400 51px \"Archivo Black\"'),document.fonts.load('400 110px \"Archivo Black\"'),document.fonts.load('400 80px \"Archivo Black\"')]);}
+     const canvas=document.createElement('canvas');
+     canvas.width=1500;canvas.height=2090;
+     const ctx=canvas.getContext('2d');
+     if(!ctx)throw new Error('Your browser could not create the export canvas.');
+
+     const loadLayer=(src,name)=>new Promise((resolve,reject)=>{
+       if(!src)return reject(new Error(name+' image is missing.'));
+       const im=new Image();
+       im.crossOrigin='anonymous';
+       im.onload=()=>resolve(im);
+       im.onerror=()=>reject(new Error('Could not load '+name+'. Check your internet connection and that the asset URL is available.'));
+       im.src=src;
+     });
+     const drawLayer=async(src,name)=>{
+       const im=await loadLayer(src,name);
+       ctx.drawImage(im,0,0,1500,2090);
+     };
+
+     await drawLayer(bg.src,'background');
+     ctx.save();
+     ctx.globalCompositeOperation='multiply';
+     ctx.globalAlpha=.70;
+     ctx.fillStyle=$('backgroundColor').value;
+     ctx.fillRect(0,0,1500,2090);
+     ctx.restore();
+
+     if(!art.hidden&&art.src){
+       const image=await loadLayer(art.src,'uploaded artwork');
+       const fit=Math.min(1500/image.width,2090/image.height);
+       const w=image.width*fit*scale/100,h=image.height*fit*scale/100;
+       ctx.drawImage(image,750+x-w/2,1045+y-h/2,w,h);
+     }
+
+     await drawLayer($('rarityOverlay').src,'rarity');
+     const frame=await loadLayer(root+'frame.png','frame');
+     const frameCanvas=document.createElement('canvas');
+     frameCanvas.width=1500;frameCanvas.height=2090;
+     const frameCtx=frameCanvas.getContext('2d');
+     frameCtx.drawImage(frame,0,0,1500,2090);
+     frameCtx.globalCompositeOperation='source-atop';
+     frameCtx.globalAlpha=.70;
+     frameCtx.fillStyle=$('frameColor').value;
+     frameCtx.fillRect(0,0,1500,2090);
+     ctx.drawImage(frameCanvas,0,0);
+     await drawLayer($('coinsOverlay').src,'coins');
+     await drawLayer($('difficultyOverlay').src,'difficulty');
+     drawText(ctx);
+
+     const blob=await new Promise((resolve,reject)=>{
+       canvas.toBlob(result=>result?resolve(result):reject(new Error('The PNG could not be created.')), 'image/png');
+     });
+     const url=URL.createObjectURL(blob);
+     const link=document.createElement('a');
+     link.href=url;
+     link.download='tcg-card.png';
+     document.body.appendChild(link);
+     link.click();
+     link.remove();
+     setTimeout(()=>URL.revokeObjectURL(url),1500);
+   }catch(err){
+     alert('PNG export failed: '+err.message);
+   }finally{
+     button.disabled=false;
+     button.textContent='Download PNG';
+   }
+ });
+ $('subtextInput').value='Sequel to';
+ $('framePerfectsInput').value='0 FP';
+ $('frameOverlay').src=root+'frame.png';
+ $('frameTint').style.backgroundColor=$('frameColor').value;
+ $('tint').style.backgroundColor=$('backgroundColor').value;
+ updateOverlays();updateArt();updateTextPreview();
+})();
+</script>
+</body>
+</html>
